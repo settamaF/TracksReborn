@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<TextItems xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+	<Items>
+	<!--
+		<TextItem>
+            <Id>EXEMPLE</Id>
+            <Text>Voulez-vous défier {0} ? ou plutot {1} ?</Text>
+        </TextItem>
+	-->
+	</Items>
+	
+</TextItems>
