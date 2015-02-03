@@ -79,11 +79,8 @@ public class Game : MonoBehaviour
 	#region Implementation
 	void UpdatePos()
 	{
-		Vector3 target;
-
 		if (!mIsMoving)
 			return;
-
 
 		//mController.position = Vector3.Lerp(mController.position, , Speed * Time.deltaTime);
 		if (mDeltaLerp == 1)
