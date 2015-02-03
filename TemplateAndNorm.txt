@@ -1,0 +1,61 @@
+Exemple de fichier template unity avec la norme:
+
+//******************************************************************************
+// Authors: 
+//******************************************************************************
+
+using UnityEngine;
+using System.Collections;
+
+//******************************************************************************
+
+public class #SCRIPTNAME# : MonoBehaviour 
+{
+	#region Script Parameters
+		public int	Value;
+	#endregion
+
+	#region Static
+
+	#endregion
+
+	#region Properties
+
+	#endregion
+
+	#region Fields
+		// Const -------------------------------------------------------------------
+		public const int 	INTCONST = 10;
+		
+		// Static ------------------------------------------------------------------
+		private static int 	mIntStatic;
+		
+		// Private -----------------------------------------------------------------
+		private int 		mIntPrivate;
+		
+		// Protected ---------------------------------------------------------------
+		protected int 		pIntProtected;
+		
+	#endregion
+
+	#region Unity Methods
+		void Awake()
+		{
+
+		}
+
+		void Start () 
+		{
+
+		}
+	#endregion
+
+	#region Methods
+
+	#endregion
+
+	#region Implementation
+
+	#endregion
+}
+
