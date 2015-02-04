@@ -30,7 +30,15 @@ public class RailGenerator : MonoBehaviour
 	#endregion
 
 	#region Fields
-		private bool	mError = false;
+		// Const -------------------------------------------------------------------
+		private const int	ITERATOR_ERROR = 2;
+		private const float MAX_DISTANCE = 10f;
+
+		// Static -------------------------------------------------------------------
+
+
+		// Private -----------------------------------------------------------------
+		private bool mError = false;
 
 	#endregion
 
@@ -99,12 +107,17 @@ public class RailGenerator : MonoBehaviour
 
 		private bool NextPoint()
 		{
+			int iteration = 0;
+
 			this.transform.Translate(Vector3.forward * this.GetDistance());
-
-
 			if (!this.SetHeight())
 				return DebugError("No Ground");
-			if (!this.SetMiddle())
+			while(!this.SetMiddle() && iteration < ITERATOR_ERROR)
+			{
+				this.transform.Translate(-Vector3.forward * MarginError);
+				iteration++;
+			}
+			if (iteration == ITERATOR_ERROR)
 				return DebugError("No collider on left or right");
 			SetForward();
 			return true;
@@ -134,9 +147,9 @@ public class RailGenerator : MonoBehaviour
 
 			if (LstPoint.Count > 0)
 				this.transform.forward = this.LstPoint[this.LstPoint.Count - 1].transform.forward;
-			if (!Physics.Raycast(this.transform.position, this.transform.right, out hitRight))
+			if (!Physics.Raycast(this.transform.position, this.transform.right, out hitRight, MAX_DISTANCE))
 				return false;
-			if (!Physics.Raycast(this.transform.position, -this.transform.right, out hitLeft))
+			if (!Physics.Raycast(this.transform.position, -this.transform.right, out hitLeft, MAX_DISTANCE))
 				return false;
 			lenght = hitLeft.distance + hitRight.distance;
 			lenght = lenght * Margin;
