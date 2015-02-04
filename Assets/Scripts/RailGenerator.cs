@@ -13,12 +13,12 @@ public class RailGenerator : MonoBehaviour
 	#region Script Parameters
 		public List<GameObject>	LstPoint;
 		public float			Distance = 1f;
-		public int				NbPoint = 0;
 		public float			Height = 0f;
 		public float			MarginError = 0.5f;
 		public bool				Manual = false;
 		public GameObject		Rail;
-
+		public bool				DestroyRail = true;
+		public float			Margin = 0.5f; //Value between 0 and 1, 0.5 = center rail
 	#endregion
 
 	#region Static
@@ -39,16 +39,24 @@ public class RailGenerator : MonoBehaviour
 		{
 			RaycastHit hit;
 
+			if (Margin < 0 || Margin > 1)
+			{
+				DebugError("Error value margin, value must be between 0 and 1");
+				mError = true;
+				return;
+			}
+
 			this.LstPoint = new List<GameObject>();
 			if (Height == 0)
 			{
 				if (Physics.Raycast(this.transform.position, -this.transform.up, out hit))
 					Height = hit.distance;
 			}
-			//SetHeight();
+			SetHeight();
 			SetMiddle();
-			SetNormal();
-			Rail = new GameObject("Rail");
+			Rail = new GameObject("Rail" + Margin);
+			if (!DestroyRail)
+				Rail.hideFlags = HideFlags.DontSave;
 			this.CreatePoint(this.transform);
 		}
 		
@@ -57,8 +65,6 @@ public class RailGenerator : MonoBehaviour
 		{
 			if (Input.GetKeyDown(KeyCode.Space))
 				Manual = !Manual;
-			if (this.NbPoint >= 0 && this.LstPoint.Count >= this.NbPoint)
-				return;
 			if (!mError)
 			{
 				if (!Manual || Input.GetKeyDown(KeyCode.KeypadEnter))
@@ -67,7 +73,6 @@ public class RailGenerator : MonoBehaviour
 						this.CreatePoint(this.transform);
 					else
 						this.mError = true;
-					DebugDrawRay();
 				}
 			}
 		}
@@ -79,20 +84,13 @@ public class RailGenerator : MonoBehaviour
 	#endregion
 
 	#region Implementation
-		private void SetNormal()
-		{
-			RaycastHit hit;
-
-			if (Physics.Raycast(this.transform.position, -this.transform.up, out hit))
-			{
-				this.transform.up = hit.normal;
-			}
-		}
 
 		private void CreatePoint(Transform tmp)
 		{
 			GameObject point = new GameObject("Point"+this.LstPoint.Count);
 
+			if (!DestroyRail)
+				point.hideFlags = HideFlags.DontSave;
 			point.transform.position = tmp.position;
 			point.transform.rotation = tmp.rotation;
 			this.LstPoint.Add(point);
@@ -102,14 +100,13 @@ public class RailGenerator : MonoBehaviour
 		private bool NextPoint()
 		{
 			this.transform.Translate(Vector3.forward * this.GetDistance());
+
+
 			if (!this.SetHeight())
 				return DebugError("No Ground");
-			SetForward();
 			if (!this.SetMiddle())
-			{
 				return DebugError("No collider on left or right");
-			}
-			//SetNormal();
+			SetForward();
 			return true;
 		}
 
@@ -118,18 +115,15 @@ public class RailGenerator : MonoBehaviour
 			RaycastHit	hit;
 			float		deltaDistance;
 
-			SetNormal();
+			if (Physics.Raycast(this.transform.position, -Vector3.up, out hit))
+				this.transform.up = hit.normal;
 			if (Physics.Raycast(this.transform.position, -this.transform.up, out hit))
 			{
 				deltaDistance = Height - hit.distance;
 				this.transform.Translate(Vector3.up * deltaDistance);
+				return true;
 			}
-			else
-			{
-				Debug.Log("No ground");
-				return false;
-			}
-			return true;
+			return false;
 		}
 
 		private bool SetMiddle()
@@ -138,18 +132,14 @@ public class RailGenerator : MonoBehaviour
 			RaycastHit	hitRight;
 			float		lenght;
 
+			if (LstPoint.Count > 0)
+				this.transform.forward = this.LstPoint[this.LstPoint.Count - 1].transform.forward;
 			if (!Physics.Raycast(this.transform.position, this.transform.right, out hitRight))
-			{
-				Debug.Log("right");
 				return false;
-			}
 			if (!Physics.Raycast(this.transform.position, -this.transform.right, out hitLeft))
-			{
-				Debug.Log("left");
 				return false;
-			}
 			lenght = hitLeft.distance + hitRight.distance;
-			lenght = lenght / 2;
+			lenght = lenght * Margin;
 			lenght = lenght - hitLeft.distance;
 			this.transform.Translate(Vector3.right * lenght);
 			return true;
@@ -159,14 +149,12 @@ public class RailGenerator : MonoBehaviour
 		{
 			Transform	lastPoint;
 			Vector3		forward;
-			float		angle;
 
+			if (this.LstPoint.Count <= 0)
+				return;
 			lastPoint = this.LstPoint[this.LstPoint.Count - 1].transform;
 			forward = this.transform.position - lastPoint.position;
-			/*angle = Vector3.Angle(this.transform.forward, forward);
-			this.transform.Rotate(Vector3.up, angle);
-			Debug.DrawLine(this.transform.position, lastPoint.position, Color.cyan, 100);*/
-			//Debug.DrawRay(this.transform.position, forward * 10f, Color.blue, 100);
+			Debug.DrawLine(this.transform.position, lastPoint.position, Color.cyan, 100);
 			this.transform.forward = forward;
 		}
 
@@ -179,12 +167,6 @@ public class RailGenerator : MonoBehaviour
 				return Distance - hit.distance - MarginError;
 			}
 			return Distance;
-		}
-
-		private void DebugDrawRay()
-		{
-			Debug.DrawRay(this.transform.position, this.transform.forward * 10f, Color.yellow, 10);
-			Debug.DrawRay(this.transform.position, this.transform.right * 10f, Color.green, 10);
 		}
 
 		private bool DebugError(string msg)
