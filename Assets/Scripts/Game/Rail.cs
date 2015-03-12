@@ -33,13 +33,14 @@ public class Rail : MonoBehaviour
 #region Methods
 	public void AddRail(List<Vector3> newRail)
 	{
-
+		Points.AddRange(newRail);
 	}
 
 	public void Remove(int countPoint)
 	{
-
+		Points.RemoveRange(0, countPoint);
 	}
+
 #endregion
 
 #region Implementation

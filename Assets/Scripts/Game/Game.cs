@@ -31,8 +31,9 @@ public class Game : MonoBehaviour
 
 	//private
 	private Transform mController;
-	private List<GameObject> mRuns;
-	private GameObject mActualRun;
+	private List<Run> mRuns;
+	private List<Rail> mRails;
+	private Run mActualRun;
 	private bool mDeleteLast = false;
 
 
@@ -58,7 +59,8 @@ public class Game : MonoBehaviour
 			Application.Quit();
 		}
 		mController = tmp.transform;
-		mRuns = new List<GameObject>();
+		mRuns = new List<Run>();
+		mRails = new List<Rail>();
 		CreateRuns();
 	}
 
@@ -100,7 +102,7 @@ public class Game : MonoBehaviour
 
 	void CreateFirstRun()
 	{
-		GameObject firstRun;
+		Run firstRun;
 		Transform runTransform;
 		Vector3 tmp;
 
@@ -117,6 +119,13 @@ public class Game : MonoBehaviour
 		mController.position = tmp;
 		mRuns.Add(firstRun);
 		mActualRun = firstRun;
+		foreach(var rail in firstRun.Rails)
+		{
+			Rail newRail = new Rail();
+
+			newRail.AddRail(rail);
+			mRails.Add(newRail);
+		}
 	}
 	void CreateRuns()
 	{
@@ -138,13 +147,14 @@ public class Game : MonoBehaviour
 			hitTransform = hit.transform;
 			if (hitTransform.parent)
 				hitTransform = hitTransform.parent;
-			if (hitTransform.gameObject != mActualRun)
+			
+			if (hitTransform.gameObject != mActualRun.gameObject)
 			{
 				if (mDeleteLast)
 					DestroyLastRun();
 				else
 					mDeleteLast = true;
-				mActualRun = hitTransform.gameObject;
+				mActualRun = hitTransform.GetComponent<Run>();
 			}
 		}
 		else
@@ -157,18 +167,22 @@ public class Game : MonoBehaviour
 
 	void DestroyLastRun()
 	{
-		GameObject delete;
+		Run delete;
 
 		delete = mRuns[0];
 		mRuns.RemoveAt(0);
-		Destroy(delete);
+		for (int i = 0; i < delete.Rails.Count; i++)
+		{
+			mRails[i].Remove(delete.Rails[i].Count);
+		}
+		Destroy(delete.gameObject);
 	}
 
 	bool AddRuns()
 	{
-		GameObject run;
+		Run run;
 		Transform runTransform;
-		GameObject lastRun;
+		Run lastRun;
 		Transform nextRun;
 
 		run = RunGenerator.Get.GenerateRandomRun();
@@ -178,16 +192,24 @@ public class Game : MonoBehaviour
 			return false;
 		}
 		lastRun = mRuns[mRuns.Count - 1];
-		nextRun = lastRun.transform.FindChild("Next");
-		if (!nextRun)
-		{
-			Debug.LogError("Error no child 'next' on the object " + lastRun.name);
-			return false;
-		}
+		nextRun = lastRun.Next;
 		runTransform = run.transform;
 		runTransform.position = nextRun.position;
 		runTransform.rotation = nextRun.rotation;
 		mRuns.Add(run);
+		for (int i = 0; i < run.Rails.Count; i++)
+		{
+			if (i > mRails.Count)
+			{
+				Rail newRail = new Rail();
+				newRail.AddRail(run.Rails[i]);
+				mRails.Add(newRail);
+			}
+			else
+			{
+				mRails[i].AddRail(run.Rails[i]);
+			}
+		}
 		return true;
 	}
 	#endregion

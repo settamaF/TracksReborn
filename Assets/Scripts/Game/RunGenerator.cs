@@ -46,11 +46,11 @@ public class RunGenerator : MonoBehaviour
 	#endregion
 
 	#region Methods
-	public GameObject GenerateRun(string run)
+	public Run GenerateRun(string run)
 	{
-		GameObject ret = null;
+		Run ret = null;
 
-		ret = GameObject.Instantiate(Resources.Load(RUN_FOLDER + run)) as GameObject;
+		ret = GameObject.Instantiate(Resources.Load(RUN_FOLDER + run)) as Run;
 		if (ret == null)
 		{
 			Debug.LogError(run + " doest exist or instantiate failed");
@@ -58,7 +58,7 @@ public class RunGenerator : MonoBehaviour
 		return ret;
 	}
 
-	public GameObject GenerateRandomRun()
+	public Run GenerateRandomRun()
 	{
 		int rand = Random.Range(0, NumberRuns);
 
