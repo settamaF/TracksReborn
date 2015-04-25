@@ -114,7 +114,6 @@ public class Object : MonoBehaviour
 					gameObject = PoolGenerator.Get.GetObject(ObjectType.EVENT, "End Event");
 					if (gameObject)
 					{
-						gameObject.GetComponent<EventTrigger>().Reset();
 						gameObject.transform.parent = child;
 						gameObject.transform.localPosition = Vector3.zero;
 					}
@@ -129,8 +128,6 @@ public class Object : MonoBehaviour
 						if (objectChild.Type == ObjectType.EVENT)
 						{
 							eventActive = true;
-							gameObject.GetComponent<EventTrigger>().Reset();
-							eventDuration = gameObject.GetComponent<EventTrigger>().Duration;
 						}
 					}
 				}
