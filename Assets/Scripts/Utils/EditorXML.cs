@@ -9,6 +9,9 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 
+//******************************************************************************
+
+/*
 public class EditorXML : EditorWindow
 {
 	public enum EditMode
@@ -188,8 +191,10 @@ public class ItemGUI
 		Scroll = new Vector2(0, 0);
 		TextID = null;
 		Text = null;
+		Text = null;
 	}
 	#endregion
 }
+*/
 
 #endif

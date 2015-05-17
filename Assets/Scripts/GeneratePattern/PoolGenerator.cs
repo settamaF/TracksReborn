@@ -105,7 +105,10 @@ public class PoolGenerator : MonoBehaviour
 			return;
 		Stack<GameObject> stack;
 		if (!stacks.TryGetValue(gameObject.name, out stack))
+		{
+			Destroy(gameObject);
 			return;
+		}
 		if (stack.Count >= MAX_DUPLICATION)
 		{
 			Destroy(gameObject);

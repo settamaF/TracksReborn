@@ -7,11 +7,11 @@ using System.Collections;
 using System.Collections.Generic;
 
 //******************************************************************************
-public class Rail : MonoBehaviour 
+public class Rail
 {
-#region Script Parameters
-	public List<Vector3> Points;
-	public string Index;
+#region Parameters
+	public List<Transform>	Points = new List<Transform>();
+	public string			Index;
 #endregion
 
 #region Static
@@ -27,21 +27,25 @@ public class Rail : MonoBehaviour
 	// Private -----------------------------------------------------------------
 #endregion
 
-#region Unity Methods
-
-#endregion
-
 #region Methods
-	public void AddRail(List<Vector3> newRail)
+	public void AddRail(List<Transform> newRail)
 	{
 		Points.AddRange(newRail);
 	}
 
 	public void Remove(int countPoint)
 	{
-		Points.RemoveRange(0, countPoint);
+		if (countPoint < Points.Count)
+			Points.RemoveRange(0, countPoint);
 	}
 
+	public void DebugShowRail()
+	{
+		for (int i = 0; i < Points.Count - 1; i++)
+		{
+			Debug.DrawLine(Points[i].position, Points[i + 1].position, Color.cyan);
+		}
+	}
 #endregion
 
 #region Implementation

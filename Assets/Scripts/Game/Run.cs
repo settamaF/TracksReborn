@@ -16,7 +16,7 @@ public class Run : MonoBehaviour
 #endregion
 
 #region Properties
-	public Dictionary<string, List<Vector3>> Rails { get { return mRails; } }
+	public Dictionary<string, List<Transform>> Rails { get { return mRails; } }
 	public Transform Next { get; set; }
 #endregion
 
@@ -26,7 +26,7 @@ public class Run : MonoBehaviour
 	private const string NAME_NEXT_POINT = "Next";
 
 	// Private -----------------------------------------------------------------
-	private Dictionary<string, List<Vector3>> mRails;
+	private Dictionary<string, List<Transform>> mRails;
 #endregion
 
 #region Unity Methods
@@ -43,9 +43,9 @@ public class Run : MonoBehaviour
 #endregion
 
 #region Methods
-	public List<Vector3>	GetRail(string index)
+	public List<Transform>	GetRail(string index)
 	{
-		List<Vector3> rail;
+		List<Transform> rail;
 
 		mRails.TryGetValue(index, out rail);
 		if (rail == null)
@@ -55,26 +55,33 @@ public class Run : MonoBehaviour
 		}
 		return rail;
 	}
+
+	public void SetTransform(Transform lastTransform)
+	{
+		transform.position = lastTransform.position;
+		transform.rotation = lastTransform.rotation;
+	}
 #endregion
 
 #region Implementation
 	private void InitRails()
 	{
-		mRails = new Dictionary<string, List<Vector3>>();
+		mRails = new Dictionary<string, List<Transform>>();
 
 		foreach(Transform child in transform)
 		{
 			if (child.name.Contains(NAME_RAIL) && child.childCount > 0)
 			{
-				List<Vector3> rail = new List<Vector3>();
+				List<Transform> rail = new List<Transform>();
 				foreach(Transform points in child)
 				{
-					rail.Add(points.position);
+					rail.Add(points);
 				}
-				string index = child.name.Substring(NAME_RAIL.Length - 1);
+				string index = child.name.Substring(NAME_RAIL.Length);
 				mRails.Add(index, rail);
 			}
 		}
 	}
 #endregion
+
 }
