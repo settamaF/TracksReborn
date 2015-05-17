@@ -8,47 +8,17 @@ using System.Linq;
 using System.Collections.Generic;
 
 //******************************************************************************
-
 public enum ObjectType
 {
-	OBSTACLE = 0,
-	BLIND,
-	GROUND,
-	EVENT
-}
-
-[System.Serializable]
-public class Stacks
-{
-	public ObjectType Type;
-	public List<ObjectStack> Stack;
-
-	public Stacks(ObjectType type, List<ObjectStack> stack)
-	{
-		Type = type;
-		Stack = stack;
-	}
-}
-
-[System.Serializable]
-public class ObjectStack
-{
-	public string				Name;
-	public Stack<GameObject>	Objects;
-}
-
-[System.Serializable]
-public class ObjectPrefab
-{
-	public ObjectType Type;
-	public List<GameObject> Prefabs;
+	RUN,
+	DECOR,
+	OBSTACLE,
+	BONUS,
+	NOTHING
 }
 
 public class PoolGenerator : MonoBehaviour 
 {
-#region Script Parameters
-	public List<ObjectPrefab> ObjectPrefabs;
-#endregion
 
 #region Static
 	public static int mMaxEnumType;
@@ -62,11 +32,12 @@ public class PoolGenerator : MonoBehaviour
 #region Fields
 	// Const -------------------------------------------------------------------
 	private const int	DEFAULT_DUPLICATION = 10;
+	private const int	MAX_DUPLICATION = 50;
 	private const int	OFFSETX = -1000;
 	private const int	OFFSETY = -1000;
 
 	// Private -----------------------------------------------------------------
-	private List<Stacks> mPool;
+	private Dictionary<ObjectType, Dictionary<string, Stack<GameObject>>> mPool;
 #endregion
 
 #region Unity Methods
@@ -74,7 +45,7 @@ public class PoolGenerator : MonoBehaviour
 	{
 		if (mInstance != null && mInstance != this)
 		{
-			Debug.LogWarning("PoolGenerator - we were instantiating a second copy of PoolGenerator, so destroying this instance");
+			Debug.LogWarning("PoolGenerator - we were instantiating a second copy of PoolGenerator, so destroying this instance", this);
 			DestroyImmediate(this.gameObject, true);
 			return;
 		}
@@ -89,66 +60,61 @@ public class PoolGenerator : MonoBehaviour
 	{
 		int range = 0;
 		int rand;
+		Dictionary<string, Stack<GameObject>> stacks;
 
-		foreach(var stack in mPool)
-		{
-			if (stack.Type == type)
-			{
-				range = stack.Stack.Count;
-				if (range <= 0)
-					return null;
-				rand = Random.Range(0, range);
-				return GetObject(type, stack.Stack[rand].Name);
-			}
-		}
-		return null;
+		if (!mPool.TryGetValue(type, out stacks))
+			return null;
+		range = stacks.Count();
+		if (range <= 0)
+			return null;
+		rand = Random.Range(0, range);
+		var keyValue = stacks.ElementAt(rand);
+		return GetObject(type, keyValue.Key);
 	}
 
 	public GameObject GetObject(ObjectType type, string name)
 	{
-		int index = GetIndexStack(type);
+		Dictionary<string, Stack<GameObject>> stacks;
 
-		if (index == -1)
-		{
-			Debug.LogWarning("Warning no object with " + type.ToString());
+		if (!mPool.TryGetValue(type, out stacks))
 			return null;
-		}
-		foreach (var stack in mPool[index].Stack)
+		Stack<GameObject> stack;
+		if (!stacks.TryGetValue(name, out stack))
+			return null;
+		GameObject ret;
+		if (stack.Count > 0)
 		{
-			if (stack.Name.ToLower() == name.ToLower())
-			{
-				GameObject ret;
-				if (stack.Objects.Count > 0)
-				{
-					ret = stack.Objects.Pop();
-					if (ret)
-						return ret;
-				}
+			if (stack.Count == 1)
 				ret = InstantiatePrefab(type, name);
+			else
+				ret = stack.Pop();
+			if (ret)
+			{
+				ret.SetActive(true);
 				return ret;
 			}
 		}
 		return null;
 	}
 
-	public void AddToStack(GameObject gameObject, ObjectType type)
+	public void AddToStack(ObjectType type, GameObject gameObject)
 	{
-		foreach (var stacks in mPool)
+		Dictionary<string, Stack<GameObject>> stacks;
+
+		if (!mPool.TryGetValue(type, out stacks))
+			return;
+		Stack<GameObject> stack;
+		if (!stacks.TryGetValue(gameObject.name, out stack))
+			return;
+		if (stack.Count >= MAX_DUPLICATION)
 		{
-			if (stacks.Type == type)
-			{
-				foreach (var stack in stacks.Stack)
-				{
-					if (stack.Name == gameObject.name)
-					{
-						stack.Objects.Push(gameObject);
-						gameObject.transform.parent = this.transform;
-						gameObject.transform.localPosition = Vector3.zero;
-						break;
-					}
-				}
-			}
+			Destroy(gameObject);
+			return;
 		}
+		stack.Push(gameObject);
+		gameObject.transform.parent = stack.FirstOrDefault().transform.parent;
+		gameObject.transform.localPosition = Vector3.zero;
+		gameObject.SetActive(false);
 	}
 #endregion
 
@@ -163,50 +129,33 @@ public class PoolGenerator : MonoBehaviour
 
 	private void InitPoolGenerator()
 	{
-		mPool = new List<Stacks>();
-		for (int i = 0; i <= mMaxEnumType; i++)
+		mPool = new Dictionary<ObjectType,Dictionary<string,Stack<GameObject>>>();
+
+		foreach (Transform childType in transform)
 		{
-			int index = GetIndexPrefab((ObjectType)i);
-			if (index >= 0)
+			ObjectType objType = IsObjectType(childType.name);
+			if (objType == ObjectType.NOTHING)
+				continue;
+			var stacks = new Dictionary<string, Stack<GameObject>>();
+			foreach (Transform child in childType)
 			{
-				List<ObjectStack> stack = new List<ObjectStack>();
-				foreach (var prefab in ObjectPrefabs[index].Prefabs)
-				{
-					ObjectStack obj = new ObjectStack();
-					obj.Name = prefab.name;
-					obj.Objects = GeneratePool(prefab);
-					stack.Add(obj);
-				}
-				mPool.Add(new Stacks((ObjectType)i, stack));
+				if (stacks.ContainsKey(child.name))
+					break;
+				var stack = GeneratePool(child.gameObject);
+				stacks.Add(child.name, stack);
 			}
+			mPool.Add(objType, stacks);
 		}
-	}
-
-	private int GetIndexPrefab(ObjectType type)
-	{
-		for (int i = 0; i < ObjectPrefabs.Count; i++)
-		{
-			if (ObjectPrefabs[i].Type == type)
-				return i;
-		}
-		return -1;
-	}
-
-	private int GetIndexStack(ObjectType type)
-	{
-		for (int i = 0; i < mPool.Count; i++)
-		{
-			if (mPool[i].Type == type)
-				return i;
-		}
-		return -1;
 	}
 
 	private Stack<GameObject> GeneratePool(GameObject prefab)
 	{
 		Stack<GameObject> ret = new Stack<GameObject>();
 
-		for (int i = 0; i < DEFAULT_DUPLICATION; i++)
+		prefab.transform.localPosition = Vector3.zero;
+		prefab.SetActive(false);
+		ret.Push(prefab);
+		for (int i = 1; i < DEFAULT_DUPLICATION; i++)
 		{
 			GameObject obj = InstantiatePrefab(prefab);
 
@@ -216,7 +165,7 @@ public class PoolGenerator : MonoBehaviour
 			}
 			else
 			{
-				Debug.LogError("Error instantiate prefab: " + prefab.name);
+				Debug.LogError("Error instantiate prefab: " + prefab.name, this);
 				break;
 			}
 		}
@@ -225,27 +174,45 @@ public class PoolGenerator : MonoBehaviour
 
 	private GameObject InstantiatePrefab(ObjectType type, string name)
 	{
-		int index = GetIndexPrefab(type);
+		Dictionary<string, Stack<GameObject>> objs;
 
-		if (index < 0)
+		if (!mPool.TryGetValue(type, out objs))
 			return null;
-		foreach(var prefab in ObjectPrefabs[index].Prefabs)
-		{
-			if (prefab.name == name)
-				return InstantiatePrefab(prefab);
-		}
-		return null;
+		Stack<GameObject> prefabs;
+		if (!objs.TryGetValue(name, out prefabs))
+			return null;
+		return InstantiatePrefab(prefabs.FirstOrDefault());
 	}
 
 	private GameObject InstantiatePrefab(GameObject prefab)
 	{
 		GameObject ret;
 
+		if (!prefab)
+		{
+			Debug.LogError("Error instantiate prefab " + prefab, this);
+			return null;
+		}
 		ret = Instantiate(prefab) as GameObject;
-		ret.transform.parent = this.transform;
+		ret.transform.parent = prefab.transform.parent;
 		ret.transform.localPosition = Vector3.zero;
 		ret.name = prefab.name;
+		ret.SetActive(false);
 		return ret;
 	}
+	
+	private ObjectType IsObjectType(string name)
+	{
+		if (name == ObjectType.BONUS.ToString("g"))
+			return ObjectType.BONUS;
+		else if (name == ObjectType.DECOR.ToString("g"))
+			return ObjectType.DECOR;
+		else if (name == ObjectType.RUN.ToString("g"))
+			return ObjectType.RUN;
+		else if (name == ObjectType.OBSTACLE.ToString("g"))
+			return ObjectType.OBSTACLE;
+		return ObjectType.NOTHING;
+	}
+
 #endregion
 }

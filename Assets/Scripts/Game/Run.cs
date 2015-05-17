@@ -16,20 +16,23 @@ public class Run : MonoBehaviour
 #endregion
 
 #region Properties
-	public List<List<Vector3>> Rails { get { return mRails;}}
+	public Dictionary<string, List<Vector3>> Rails { get { return mRails; } }
 	public Transform Next { get; set; }
 #endregion
 
 #region Fields
-	// Private -----------------------------------------------------------------
-	private List<List<Vector3>> mRails;
+	// Const   -----------------------------------------------------------------
+	private const string NAME_RAIL = "Rail";
+	private const string NAME_NEXT_POINT = "Next";
 
+	// Private -----------------------------------------------------------------
+	private Dictionary<string, List<Vector3>> mRails;
 #endregion
 
 #region Unity Methods
 	void Awake()
 	{
-		Next = transform.FindChild("Next");
+		Next = transform.FindChild(NAME_NEXT_POINT);
 		if (!Next)
 		{
 			Debug.LogError(this.name + " Doesn't contain Next object");
@@ -40,29 +43,36 @@ public class Run : MonoBehaviour
 #endregion
 
 #region Methods
-	public List<Vector3>	GetRail(int index)
+	public List<Vector3>	GetRail(string index)
 	{
-		if (index < 0 ||index > mRails.Count)
+		List<Vector3> rail;
+
+		mRails.TryGetValue(index, out rail);
+		if (rail == null)
+		{
+			Debug.LogError("No rail with " + index + " on the object " + name);
 			return null;
-		return mRails[index];
+		}
+		return rail;
 	}
 #endregion
 
 #region Implementation
 	private void InitRails()
 	{
-		mRails = new List<List<Vector3>>();
+		mRails = new Dictionary<string, List<Vector3>>();
 
 		foreach(Transform child in transform)
 		{
-			if (child.name.Contains("Rail") && child.childCount > 0)
+			if (child.name.Contains(NAME_RAIL) && child.childCount > 0)
 			{
 				List<Vector3> rail = new List<Vector3>();
 				foreach(Transform points in child)
 				{
 					rail.Add(points.position);
 				}
-				mRails.Add(rail);
+				string index = child.name.Substring(NAME_RAIL.Length - 1);
+				mRails.Add(index, rail);
 			}
 		}
 	}

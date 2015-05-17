@@ -1,5 +1,5 @@
 ﻿//******************************************************************************
-// Authors: Frederic SETTAMA  
+// Authors: Frederic SETTAMA
 //******************************************************************************
 
 using UnityEngine;
@@ -21,30 +21,51 @@ public class RailGenerator : MonoBehaviour
 		public float			Margin = 0.5f; //Value between 0 and 1, 0.5 = center rail
 	#endregion
 
-	#region Static
-
-	#endregion
-
-	#region Properties
-
-	#endregion
-
 	#region Fields
 		// Const -------------------------------------------------------------------
 		private const int	ITERATOR_ERROR = 2;
-		private const float MAX_DISTANCE = 10f;
-
-		// Static -------------------------------------------------------------------
-
-
+		private const float	MAX_DISTANCE = 10f;
 		// Private -----------------------------------------------------------------
-		private bool mError = false;
-
+		private bool		mError = false;
+		private bool		mInit = false;
 	#endregion
 
 	#region Unity Methods
 		void Start () 
 		{
+			if (!Manual)
+				Init();
+		}
+		
+		void Update ()
+		{
+			if (Input.GetKeyDown(KeyCode.Space))
+				Manual = !Manual;
+			if (!mError)
+			{
+				if (!Manual || Input.GetKeyDown(KeyCode.KeypadEnter))
+				{
+					if (!mInit)
+						Init();
+					if (this.NextPoint())
+						this.CreatePoint(this.transform);
+					else
+						this.mError = true;
+				}
+			}
+		}
+
+	#endregion
+
+	#region Methods
+
+	#endregion
+
+	#region Implementation
+
+		private void Init()
+		{
+			mInit = true;
 			RaycastHit hit;
 
 			if (Margin < 0 || Margin > 1)
@@ -67,31 +88,6 @@ public class RailGenerator : MonoBehaviour
 				Rail.hideFlags = HideFlags.DontSave;
 			this.CreatePoint(this.transform);
 		}
-		
-		// Update is called once per frame
-		void Update ()
-		{
-			if (Input.GetKeyDown(KeyCode.Space))
-				Manual = !Manual;
-			if (!mError)
-			{
-				if (!Manual || Input.GetKeyDown(KeyCode.KeypadEnter))
-				{
-					if (this.NextPoint())
-						this.CreatePoint(this.transform);
-					else
-						this.mError = true;
-				}
-			}
-		}
-
-	#endregion
-
-	#region Methods
-
-	#endregion
-
-	#region Implementation
 
 		private void CreatePoint(Transform tmp)
 		{
@@ -184,7 +180,7 @@ public class RailGenerator : MonoBehaviour
 
 		private bool DebugError(string msg)
 		{
-			Debug.LogError("Error generation Rail : " + msg);
+			Debug.LogError("Error generation Rail : " + msg, this);
 			return false;
 		}
 	#endregion

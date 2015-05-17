@@ -123,7 +123,8 @@ public class Game : MonoBehaviour
 		{
 			Rail newRail = new Rail();
 
-			newRail.AddRail(rail);
+			newRail.Index = rail.Key;
+			newRail.AddRail(rail.Value);
 			mRails.Add(newRail);
 		}
 	}
@@ -171,9 +172,13 @@ public class Game : MonoBehaviour
 
 		delete = mRuns[0];
 		mRuns.RemoveAt(0);
-		for (int i = 0; i < delete.Rails.Count; i++)
+		foreach (var rail in delete.Rails)
 		{
-			mRails[i].Remove(delete.Rails[i].Count);
+			foreach(var globalRail in mRails)
+			{
+				if (globalRail.Index == rail.Key)
+					globalRail.Remove(rail.Value.Count);
+			}
 		}
 		Destroy(delete.gameObject);
 	}
@@ -184,7 +189,7 @@ public class Game : MonoBehaviour
 		Transform runTransform;
 		Run lastRun;
 		Transform nextRun;
-
+		
 		run = RunGenerator.Get.GenerateRandomRun();
 		if (!run)
 		{
@@ -197,17 +202,23 @@ public class Game : MonoBehaviour
 		runTransform.position = nextRun.position;
 		runTransform.rotation = nextRun.rotation;
 		mRuns.Add(run);
-		for (int i = 0; i < run.Rails.Count; i++)
+		foreach (var rail in run.Rails)
 		{
-			if (i > mRails.Count)
+			bool find = false;
+			foreach (var globalRail in mRails)
+			{
+				if (globalRail.Index == rail.Key)
+				{
+					globalRail.AddRail(rail.Value);
+					break;
+				}
+			}
+			if (!find)
 			{
 				Rail newRail = new Rail();
-				newRail.AddRail(run.Rails[i]);
+				newRail.Index = rail.Key;
+				newRail.AddRail(rail.Value);
 				mRails.Add(newRail);
-			}
-			else
-			{
-				mRails[i].AddRail(run.Rails[i]);
 			}
 		}
 		return true;
