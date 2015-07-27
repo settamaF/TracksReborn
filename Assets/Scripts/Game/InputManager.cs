@@ -118,10 +118,10 @@ public class InputManager : MonoBehaviour
 		Vector2 ret;
 
 		ret = GetSwipe();
-		if (ret.Equals(Vector2.zero))
+		/*if (ret.Equals(Vector2.zero))
 		{
 			ret = GetClickInput();
-		}
+		}*/
 		if (ret.Equals(Vector2.zero))
 		{
 			ret = GetDirectionKeyboardInput();

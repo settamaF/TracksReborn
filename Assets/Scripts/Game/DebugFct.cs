@@ -10,19 +10,15 @@ using System.Collections;
 public class DebugFct : MonoBehaviour
 {
 #region Script Parameters
-	public bool		SimulateInfiniteRun = false;
-	public float	TimeDebug = 2;
-	public float	Count = 0;
-	public float	SpeedCamera = 1;
+	public bool			SimulateInfiniteRun = false;
+	public float		TimeDebug = 2;
+	public float		Count = 0;
+	public bool			PrintInput = false;
 #endregion
 
 #region Fields
 	// Private -----------------------------------------------------------------
-	private Rail		mDefaultRail = null;
-	private bool		mCameraDebugInit = false;
 	private Game		mGame;
-	private Transform	mActualIndexPoint;
-	private float		mLerpT = 0;
 #endregion
 
 #region Unity Methods
@@ -41,8 +37,8 @@ public class DebugFct : MonoBehaviour
 	{
 		if (SimulateInfiniteRun)
 			InfiniteGenerationDebug();
-		else
-			MoveCamera();
+		if (PrintInput)
+			PrintInputFct();
 		foreach (var rail in mGame.Rails)
 		{
 			rail.DebugShowRail();
@@ -64,59 +60,14 @@ public class DebugFct : MonoBehaviour
 		}
 	}
 
-#endregion
-
-#region Implementation
-	private void CameraFollowRailInit()
+	private void PrintInputFct()
 	{
-		if (!mCameraDebugInit)
-		{
-			mCameraDebugInit = true;
-			foreach (var rail in mGame.Rails)
-			{
-				if (rail.Index == "0.5")
-				{
-					mDefaultRail = rail;
-					break;
-				}
+		Vector2 input = InputManager.Get.GetDirectionNormalizedInput();
 
-			}
-			if (mDefaultRail == null)
-				return;
-			Camera.main.transform.position = mDefaultRail.Points[0].position;
-			Camera.main.transform.LookAt(mDefaultRail.Points[1]);
-			mActualIndexPoint = mDefaultRail.Points[0];
-		}
-	}
-
-	private void MoveCamera()
-	{
-		Vector3 position;
-		int index = 0;
-
-		CameraFollowRailInit();
-		if (mDefaultRail == null)
-			return;
-		mLerpT += Time.deltaTime * SpeedCamera;
-		mLerpT = Mathf.Clamp(mLerpT, 0, 1);
-		for (int i = 0; i < mDefaultRail.Points.Count; i++ )
+		if (!input.Equals(Vector2.zero))
 		{
-			if (mDefaultRail.Points[i] == mActualIndexPoint)
-			{
-				index = i;
-				break;
-			}
+			Debug.Log(input);
 		}
-		position = Vector3.Lerp(mDefaultRail.Points[index].position, mDefaultRail.Points[index + 1].position, mLerpT);
-		if (mLerpT >= 1)
-		{
-			mLerpT = 0;
-			index++;
-			mActualIndexPoint = mDefaultRail.Points[index];
-		}
-		Camera.main.transform.position = position;
-		Camera.main.transform.LookAt(mDefaultRail.Points[index + 1]);
-		mGame.UpdateRuns(Camera.main.transform);
 	}
 #endregion
 }

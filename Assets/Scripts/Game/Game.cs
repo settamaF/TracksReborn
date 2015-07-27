@@ -10,7 +10,10 @@ using System.Collections.Generic;
 public class Game : MonoBehaviour
 {
 #region Script Parameters
-
+	public GameObject		Player;
+	public float			MoveSpeed = 1;
+	public float			RotateSpeed = 1;
+	public float			SwitchSpeed = 1;
 #endregion
 
 #region Properties
@@ -34,6 +37,12 @@ public class Game : MonoBehaviour
 	private List<Rail>		mRails;
 	private bool			mDeleteLastRun = false;
 	private Run				mActualRun;
+	private Rail			mActualRail;
+	private int				mActualIndexRail;
+	private Transform		mActualIndexPoint;
+	private Rail			mNextRail = null;
+	private float			mLerpT = 0;
+	private Vector2			mCurrentInput = Vector2.zero;
 #endregion
 
 #region Unity Methods
@@ -46,6 +55,22 @@ public class Game : MonoBehaviour
 		mRuns = new List<Run>();
 		mRails = new List<Rail>();
 		CreateRuns();
+		if (InitPlayerPosition())
+			this.enabled = true;
+		else
+			this.enabled = false;
+	}
+
+	void Update()
+	{
+		Vector2 input = InputManager.Get.GetDirectionNormalizedInput();
+		if (mCurrentInput.Equals(Vector2.zero))
+		{
+			mCurrentInput = input;
+			ExecuteInput();
+		}
+		MovePlayer();
+		UpdateRuns(Player.transform);
 	}
 #endregion
 
@@ -168,5 +193,113 @@ public class Game : MonoBehaviour
 		}
 	}
 
+	bool InitPlayerPosition()
+	{
+		int index = 0;
+
+		foreach (var rail in mRails)
+		{
+			if (rail.Index == "0.5")
+			{
+				mActualRail = rail;
+				break;
+			}
+			index++;
+		}
+		if (mActualRail == null)
+			return false;
+		mActualIndexRail = index;
+		mNextRail = mActualRail;
+		if (!Player)
+		{
+			Player = Camera.main.gameObject;
+		}
+		Player.transform.position = mActualRail.Points[0].position;
+		Player.transform.LookAt(mActualRail.Points[1]);
+		mActualIndexPoint = mActualRail.Points[0];
+		return true;
+	}
+
+	void MovePlayer()
+	{
+		Vector3 position;
+		int index = 0;
+
+		mLerpT += Time.deltaTime * MoveSpeed;
+		mLerpT = Mathf.Clamp(mLerpT, 0, 1);
+		for (int i = 0; i < mActualRail.Points.Count; i++)
+		{
+			if (mActualRail.Points[i] == mActualIndexPoint)
+			{
+				index = i;
+				break;
+			}
+		}
+		position = Vector3.Lerp(mActualRail.Points[index].position, mNextRail.Points[index + 1].position, mLerpT);
+		//if jump update heigt
+		if (mLerpT >= 1)
+		{
+			mLerpT = 0;
+			index++;
+			if (mNextRail != mActualRail)
+			{
+				mActualRail = mNextRail;
+				if (mCurrentInput.Equals(InputManager.Left))
+					mActualIndexRail--;
+				else
+					mActualIndexRail++;
+				mCurrentInput = Vector2.zero;
+			}
+			mActualIndexPoint = mActualRail.Points[index];
+		}
+		Player.transform.position = position;
+		var smoothRotation = Quaternion.LookRotation(mActualRail.Points[index + 1].position - Player.transform.position);
+		Player.transform.rotation = Quaternion.Slerp(Player.transform.rotation, smoothRotation, RotateSpeed * Time.deltaTime);
+	}
+
+	void ExecuteInput()
+	{
+		if (mCurrentInput.Equals(InputManager.Left) || mCurrentInput.Equals(InputManager.Right))
+		{
+			SwitchLane();
+		}
+		else if (mCurrentInput.Equals(InputManager.Up))
+		{
+			Jump();
+		}
+		else
+		{
+			Crouch();
+		}
+
+	}
+	void SwitchLane()
+	{
+		int indexNextLane = mActualIndexRail;
+
+		if (mCurrentInput.Equals(InputManager.Left))
+			indexNextLane--;
+		else
+			indexNextLane++;
+		if (indexNextLane < 0 || indexNextLane >= mRails.Count)
+		{
+			//GameOver
+			mCurrentInput = Vector2.zero;
+		}
+		else
+		{
+			mNextRail = mRails[indexNextLane];
+		}
+	}
+
+	void Jump()
+	{
+		mCurrentInput = Vector2.zero;
+	}
+	
+	void Crouch()
+	{
+		mCurrentInput = Vector2.zero;
+	}
 #endregion
 }
